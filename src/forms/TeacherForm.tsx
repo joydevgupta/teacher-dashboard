@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
-import TimePicker from 'react-time-picker';
+import DatePicker from 'react-datepicker'; // Using react-datepicker for time picker
+import 'react-datepicker/dist/react-datepicker.css';
 import { countryIsdMap } from '../data/countryIsdMap'; // Correct way to import named exports
+
+// Days of the week for availability
+const daysOfWeek = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
 
 const TeacherForm: React.FC = () => {
   // State to manage form input fields
@@ -18,19 +30,22 @@ const TeacherForm: React.FC = () => {
   const [teachingQualification, setTeachingQualification] =
     useState<string>('');
 
-  const [availableFrom, setAvailableFrom] = useState<string | null>('00:00');
-  const [availableUntil, setAvailableUntil] = useState<string | null>('00:00');
-  const [daysOfAvailability, setDaysOfAvailability] = useState<string>('');
-  const [timezone, setTimezone] = useState<string>('');
+  // State for weekly availability
+  const [weeklyAvailability, setWeeklyAvailability] = useState<{
+    [key: string]: { startTime: Date | null; endTime: Date | null }[];
+  }>({});
 
+  // Teaching preferences
   const [teachingLanguage, setTeachingLanguage] = useState<string>('English');
   const [preferredAgeGroup, setPreferredAgeGroup] =
     useState<string>('Elementary');
   const [englishCourses, setEnglishCourses] = useState<string[]>([]);
 
+  // Payment details
   const [hourlyRate, setHourlyRate] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<string>('PayPal');
 
+  // Notes
   const [notes, setNotes] = useState<string>('');
 
   // Handle country change and update the ISD code
@@ -38,6 +53,27 @@ const TeacherForm: React.FC = () => {
     const selectedCountry = e.target.value;
     setCountry(selectedCountry);
     setIsdCode(countryIsdMap[selectedCountry] || ''); // Set ISD code based on the selected country
+  };
+
+  // Handle weekly time slot changes
+  const handleAddTimeSlot = (day: string) => {
+    setWeeklyAvailability((prev) => ({
+      ...prev,
+      [day]: [...(prev[day] || []), { startTime: null, endTime: null }],
+    }));
+  };
+
+  const handleTimeChange = (
+    day: string,
+    index: number,
+    field: 'startTime' | 'endTime',
+    value: Date | null
+  ) => {
+    setWeeklyAvailability((prev) => {
+      const updatedSlots = [...(prev[day] || [])];
+      updatedSlots[index][field] = value;
+      return { ...prev, [day]: updatedSlots };
+    });
   };
 
   // Submit handler function
@@ -55,10 +91,7 @@ const TeacherForm: React.FC = () => {
       degree,
       university,
       teachingQualification,
-      availableFrom,
-      availableUntil,
-      daysOfAvailability,
-      timezone,
+      weeklyAvailability, // Log the weekly availability
       teachingLanguage,
       preferredAgeGroup,
       englishCourses,
@@ -176,45 +209,49 @@ const TeacherForm: React.FC = () => {
         />
       </div>
 
-      {/* Calendar and Availability Fields */}
+      {/* Weekly Time Slots */}
       <div>
-        <label>Available From:</label>
-        <TimePicker
-          onChange={setAvailableFrom}
-          value={availableFrom}
-          disableClock={true}
-          clearIcon={null}
-        />
-      </div>
-
-      <div>
-        <label>Available Until:</label>
-        <TimePicker
-          onChange={setAvailableUntil}
-          value={availableUntil}
-          disableClock={true}
-          clearIcon={null}
-        />
-      </div>
-
-      <div>
-        <label>Days of Availability:</label>
-        <input
-          type="text"
-          value={daysOfAvailability}
-          onChange={(e) => setDaysOfAvailability(e.target.value)}
-          required
-        />
-      </div>
-
-      <div>
-        <label>Timezone:</label>
-        <input
-          type="text"
-          value={timezone}
-          onChange={(e) => setTimezone(e.target.value)}
-          required
-        />
+        <h3>Weekly Availability</h3>
+        {daysOfWeek.map((day) => (
+          <div key={day}>
+            <h4>{day}</h4>
+            {(weeklyAvailability[day] || []).map((slot, index) => (
+              <div key={index}>
+                <label>Start Time:</label>
+                <DatePicker
+                  selected={slot.startTime}
+                  onChange={(date) =>
+                    handleTimeChange(day, index, 'startTime', date)
+                  }
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={30}
+                  timeCaption="Start Time"
+                  dateFormat="h:mm aa"
+                />
+                <label>End Time:</label>
+                <DatePicker
+                  selected={slot.endTime}
+                  onChange={(date) =>
+                    handleTimeChange(day, index, 'endTime', date)
+                  }
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={30}
+                  timeCaption="End Time"
+                  dateFormat="h:mm aa"
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleAddTimeSlot(day)}
+              disabled={(weeklyAvailability[day] || []).length >= 7} // Restrict to 7 slots per day
+            >
+              Add Time Slot
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* Teaching Preferences Fields */}
