@@ -39,7 +39,8 @@ const TeacherForm: React.FC = () => {
   const [teachingLanguage, setTeachingLanguage] = useState<string>('English');
   const [preferredAgeGroup, setPreferredAgeGroup] =
     useState<string>('Elementary');
-  const [englishCourses, setEnglishCourses] = useState<string[]>([]);
+  const [englishCourses, setEnglishCourses] =
+    useState<string>('General English');
 
   // Payment details
   const [hourlyRate, setHourlyRate] = useState<string>('');
@@ -281,13 +282,8 @@ const TeacherForm: React.FC = () => {
       <div>
         <label>English Courses Offered:</label>
         <select
-          multiple
           value={englishCourses}
-          onChange={(e) =>
-            setEnglishCourses(
-              Array.from(e.target.selectedOptions, (option) => option.value)
-            )
-          }
+          onChange={(e) => setEnglishCourses(e.target.value)}
         >
           <option value="General English">General English</option>
           <option value="Business English">Business English</option>
